@@ -49,6 +49,14 @@ echo "$curl_dtr" | jq -r '.data.featuredContentList.featured_content_list[].sect
 '
 ```
 
-curl下载网页html获取access_token ， wget下载图片，-nc代表不会下载已经有的重名图片文件
-
+curl下载网页html获取access_token ， wget下载图片，-nc代表不会下载已经有的重名图片
 page_content加1代表翻页
+
+
+```
+apt install nodejs
+git clone https://github.com/Map9876/nymey-image-downloader.git
+cd nymey-image-downloader
+npm install .
+node nymey.js
+```
