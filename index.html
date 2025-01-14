@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 300px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .card img {
+            width: 100%;
+            height: auto;
+        }
+        .card .content {
+            padding: 10px;
+        }
+        .card .content a {
+            display: block;
+            color: #007BFF;
+            text-decoration: none;
+            margin-top: 10px;
+            word-wrap: break-word; /* Ensure long links wrap within the container */
+        }
+        .card .content a:hover {
+            text-decoration: underline;
+        }
+        .trailer-urls {
+            margin-top: 20px;
+            width: 80%;
+            max-width: 800px;
+        }
+        .trailer-urls div {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 5px 0;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            word-wrap: break-word; /* Ensure long links wrap within the container */
+        }
+        .toggle-button {
+            cursor: pointer;
+            margin: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s;
+        }
+        .toggle-button:hover {
+            transform: scale(1.1);
+        }
+        .toggle-button svg {
+            fill: #fff;
+        }
+        .small-card {
+            width: 150px;
+        }
+        .large-card {
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Gallery</h1>
+    <div class="toggle-button" id="toggle-button">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7zm-1-4h2v2h-2zm0-10h2v6h-2z" fill="#fff"/>
+        </svg>
+    </div>
+    <div class="gallery" id="gallery"></div>
+    <div class="trailer-urls" id="trailer-urls"></div>
+
+    <script>
+        async function fetchData() {
+            try {
+                const accessTokenResponse = await fetch('/api/accessToken');
+                const { accessToken } = await accessTokenResponse.json();
+                const response = await fetch('/api/content', { 
+                    method: 'GET', 
+                    headers: { 
+                        'authorization': `Bearer ${accessToken}`
+                    } 
+                });
+
+                const data = await response.json();
+                console.log(typeof data);
+                displayImages(data);
+                displayTrailerUrls(data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        function displayImages(data) {
+            if (!data || !data.data.featuredContentList)  { 
+                console.error('Invalid data structure');
+                console.log(data);
+                return;
+            }
+
+            const gallery = document.getElementById('gallery');
+            const seenUrls = new Set();
+            data.data.featuredContentList.featured_content_list.forEach(section => {
+                section.section_content_list.content_list.forEach(content => {
+                    const mobileImage = content.posters?.mobile_apps[0]?.file_url;
+                    const websiteImage = content.posters?.website[0]?.file_url;
+
+                    if (mobileImage && !seenUrls.has(mobileImage)) {
+                        seenUrls.add(mobileImage);
+                        const cardElement = document.createElement('div');
+                        cardElement.classList.add('card', 'large-card');
+
+                        const imgElement = document.createElement('img');
+                        imgElement.src = mobileImage;
+
+                        const contentElement = document.createElement('div');
+                        contentElement.classList.add('content');
+                        contentElement.innerHTML = `<a href="${mobileImage}" target="_blank">View Image</a>`;
+
+                        cardElement.appendChild(imgElement);
+                        cardElement.appendChild(contentElement);
+                        gallery.appendChild(cardElement);
+                    }
+
+                    if (websiteImage && !seenUrls.has(websiteImage)) {
+                        seenUrls.add(websiteImage);
+                        const cardElement = document.createElement('div');
+                        cardElement.classList.add('card', 'large-card');
+
+                        const imgElement = document.createElement('img');
+                        imgElement.src = websiteImage;
+
+                        const contentElement = document.createElement('div');
+                        contentElement.classList.add('content');
+                        contentElement.innerHTML = `<a href="${websiteImage}" target="_blank">View Image</a>`;
+
+                        cardElement.appendChild(imgElement);
+                        cardElement.appendChild(contentElement);
+                        gallery.appendChild(cardElement);
+                    }
+                });
+            });
+        }
+
+        function displayTrailerUrls(data) {
+            if (!data || !data.data.featuredContentList)  { 
+                console.error('Invalid data structure');
+                console.log(data);
+                return;
+            }
+
+            const trailerUrlsContainer = document.getElementById('trailer-urls');
+            trailerUrlsContainer.innerHTML = '<h2>Trailer URLs</h2>';
+            const seenUrls = new Set();
+            data.data.featuredContentList.featured_content_list.forEach(section => {
+                section.section_content_list.content_list.forEach(content => {
+                    const trailerUrl = content.trailer_details?.file_url;
+                    if (trailerUrl && !seenUrls.has(trailerUrl)) {
+                        seenUrls.add(trailerUrl);
+                        const urlElement = document.createElement('div');
+                        urlElement.textContent = trailerUrl;
+                        trailerUrlsContainer.appendChild(urlElement);
+                    }
+                });
+            });
+        }
+
+        document.getElementById('toggle-button').addEventListener('click', () => {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.classList.toggle('small-card');
+                card.classList.toggle('large-card');
+            });
+        });
+
+        fetchData();
+    </script>
+</body>
+  </html>
